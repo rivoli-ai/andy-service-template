@@ -190,6 +190,20 @@ dotnet ef database update --project src/__SERVICE_PASCAL__.Infrastructure --star
 - All tests must pass before push
 - Copyright header: `// Copyright (c) Rivoli AI 2026. All rights reserved.`
 
+## Secret Scanning
+
+Three layers of protection against committing secrets:
+
+1. **Pre-commit hook** (local): Scans staged files for passwords, API keys, tokens, private keys
+   - Install: `./scripts/setup-git-hooks.sh`
+   - Bypass for known dev defaults: `git commit --no-verify`
+2. **Gitleaks** (CI): Runs on every push/PR as the first CI job — blocks build if secrets found
+   - Config: `.gitleaks.toml` (allowlists for dev defaults)
+3. **GitHub secret scanning** (if enabled on the repo)
+
+**Never commit**: real API keys, production passwords, private keys, personal tokens.
+**Allowed**: dev-only defaults like `_dev_password`, `Test123!`, `devcert` (allowlisted in `.gitleaks.toml`).
+
 ## CI/CD
 
 - **ci.yml**: Build + test (.NET and Angular) on push/PR
