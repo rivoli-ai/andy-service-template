@@ -52,3 +52,30 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Node
+node_modules/
+dist/
+.angular/
+
+# IDE
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Certs
+certs/*.crt
+certs/*.pem
+certs/*.cer
+certs/*.key
+certs/*.pfx
+
+# Coverage
+coverage/
+*.coverage

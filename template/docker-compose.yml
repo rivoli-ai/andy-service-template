@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: __SERVICE_KEBAB__-postgres
+    environment:
+      POSTGRES_DB: __SERVICE_SNAKE__
+      POSTGRES_USER: __SERVICE_SNAKE__
+      POSTGRES_PASSWORD: __SERVICE_SNAKE___dev_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "__PORT_PG__:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U __SERVICE_SNAKE__ -d __SERVICE_SNAKE__"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - __SERVICE_KEBAB__-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        certs: ./certs
+    container_name: __SERVICE_KEBAB__-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:8443;http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=__SERVICE_SNAKE__;Username=__SERVICE_SNAKE__;Password=__SERVICE_SNAKE___dev_password
+      - AndyAuth__Authority=https://host.docker.internal:5001
+      - AndyAuth__Audience=urn:__SERVICE_KEBAB__-api
+      - AndyAuth__RequireHttpsMetadata=false
+      - Rbac__ApiBaseUrl=https://host.docker.internal:5003
+      - Rbac__ApplicationCode=__SERVICE_KEBAB__
+      - AndySettings__ApiBaseUrl=https://host.docker.internal:5300
+      - AndySettings__ApplicationCode=__SERVICE_KEBAB__
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "__PORT_HTTPS__:8443"
+      - "__PORT_HTTP__:8080"
+    volumes:
+      - ./certs:/usr/local/share/ca-certificates/custom:ro
+      - dpkeys:/app/.aspnet/DataProtection-Keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8443/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - __SERVICE_KEBAB__-network
+
+volumes:
+  dpkeys:
+  postgres_data:
+
+networks:
+  __SERVICE_KEBAB__-network:
+    driver: bridge

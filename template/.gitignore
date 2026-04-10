@@ -1,0 +1,72 @@
+# .NET
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+~$*
+*~
+CodeCoverage/
+*.binlog
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+.vs/
+*.user
+*.suo
+*.cache
+*.DotSettings.user
+
+# Node / Angular
+client/node_modules/
+client/dist/
+client/.angular/
+client/coverage/
+client/.env
+client/.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Certs (keep .gitkeep only)
+certs/*.crt
+certs/*.pem
+certs/*.cer
+certs/*.key
+certs/*.pfx
+!certs/.gitkeep
+!certs/README.md
+
+# User secrets
+secrets.json
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
