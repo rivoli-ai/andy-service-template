@@ -26,6 +26,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'help',
+    loadComponent: () =>
+      import('./features/help/help.component').then(
+        (m) => m.HelpComponent
+      ),
+  },
+  {
     path: 'callback',
     loadComponent: () =>
       import('./core/auth/callback.component').then(
