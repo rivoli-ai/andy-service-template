@@ -50,6 +50,14 @@ KNOWN_PORT_LIST=(
   "andy-narration-https:5310"
   "andy-narration-http:5311"
   "andy-narration-pg:5440"
+  "andy-issues-https:5410"
+  "andy-issues-http:5411"
+  "andy-issues-pg:5443"
+  "andy-issues-client:4203"
+  "andy-agents-https:5420"
+  "andy-agents-http:5421"
+  "andy-agents-pg:5444"
+  "andy-agents-client:4204"
 )
 
 # --- Defaults ---
