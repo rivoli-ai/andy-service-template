@@ -1,135 +1,220 @@
 // Copyright (c) Rivoli AI 2026. All rights reserved.
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+
+interface HelpTopicSummary {
+  slug: string;
+  title: string;
+  order: number;
+  tags: string[];
+}
+
+interface HelpTopic extends HelpTopicSummary {
+  markdown: string;
+}
 
 @Component({
   selector: 'app-help',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="help-page">
-      <h1>Help &amp; Documentation</h1>
-
-      <section class="help-section">
-        <h2>Getting Started</h2>
-        <ol>
-          <li>Sign in using your Andy Auth credentials ({{ testUser }})</li>
-          <li>Navigate to <strong>Items</strong> to create and manage resources</li>
-          <li>Use the <strong>Dashboard</strong> for an overview of your data</li>
-        </ol>
-      </section>
-
-      <section class="help-section">
-        <h2>API Access</h2>
-        <div class="card-grid">
-          <a class="help-card" [href]="swaggerUrl" target="_blank">
-            <div class="card-icon">REST</div>
-            <div class="card-body">
-              <h3>Swagger / OpenAPI</h3>
-              <p>Interactive API documentation. Try endpoints directly from the browser.</p>
-            </div>
+    <div class="help-layout">
+      <aside class="help-sidebar">
+        <h2>Help Topics</h2>
+        <input
+          class="search-input"
+          placeholder="Search help..."
+          (input)="onSearch($event)"
+        />
+        <nav>
+          <a
+            *ngFor="let topic of topics"
+            [class.active]="selectedSlug === topic.slug"
+            (click)="selectTopic(topic.slug)"
+          >
+            {{ topic.title }}
           </a>
-          <div class="help-card">
-            <div class="card-icon">MCP</div>
-            <div class="card-body">
-              <h3>Model Context Protocol</h3>
-              <p>Connect AI assistants (Claude, ChatGPT) via the <code>/mcp</code> endpoint.</p>
-            </div>
-          </div>
-          <div class="help-card">
-            <div class="card-icon">gRPC</div>
-            <div class="card-body">
-              <h3>gRPC</h3>
-              <p>High-performance RPC for service-to-service communication.</p>
-            </div>
-          </div>
-          <div class="help-card">
-            <div class="card-icon">CLI</div>
-            <div class="card-body">
-              <h3>Command Line</h3>
-              <p>Manage resources from the terminal with the CLI tool.</p>
-              <code>dotnet run --project tools/*.Cli -- items list</code>
-            </div>
-          </div>
+        </nav>
+        <div class="help-meta">
+          <p>
+            <a [href]="swaggerUrl" target="_blank">Swagger API Docs</a>
+          </p>
+          <p class="copyright">Copyright &copy; Rivoli AI 2026</p>
         </div>
-      </section>
+      </aside>
 
-      <section class="help-section">
-        <h2>Authentication</h2>
-        <table class="info-table">
-          <tr><td>Provider</td><td>Andy Auth (OAuth2 / OIDC)</td></tr>
-          <tr><td>Test user</td><td><code>{{ testUser }}</code></td></tr>
-          <tr><td>Test password</td><td><code>Test123!</code></td></tr>
-          <tr><td>Auth server</td><td><code>{{ authAuthority }}</code></td></tr>
-        </table>
-        <p class="note">Test credentials are for development only. Never use in production.</p>
-      </section>
-
-      <section class="help-section">
-        <h2>Architecture</h2>
-        <table class="info-table">
-          <tr><td>Backend</td><td>.NET 8 — Clean Architecture (Domain, Application, Infrastructure, API)</td></tr>
-          <tr><td>Frontend</td><td>Angular 18 — Standalone components, OIDC auth</td></tr>
-          <tr><td>Database</td><td>PostgreSQL (default) / SQLite (embedded)</td></tr>
-          <tr><td>Authorization</td><td>Andy RBAC — Role-based access control</td></tr>
-          <tr><td>Settings</td><td>Andy Settings — Centralized configuration</td></tr>
-          <tr><td>Telemetry</td><td>OpenTelemetry — Traces, metrics, OTLP export</td></tr>
-        </table>
-      </section>
-
-      <section class="help-section">
-        <h2>Support</h2>
-        <ul>
-          <li>Documentation: <a [href]="docsUrl" target="_blank">{{ docsUrl }}</a></li>
-          <li>Source: <a [href]="repoUrl" target="_blank">{{ repoUrl }}</a></li>
-          <li>Issues: <a [href]="repoUrl + '/issues'" target="_blank">{{ repoUrl }}/issues</a></li>
-        </ul>
-      </section>
-
-      <footer class="help-footer">
-        <p>__SERVICE_DISPLAY__ &mdash; Copyright &copy; Rivoli AI 2026</p>
-      </footer>
+      <main class="help-content">
+        <div *ngIf="loading" class="loading">Loading...</div>
+        <div *ngIf="error" class="error">{{ error }}</div>
+        <div
+          *ngIf="currentTopic && !loading"
+          class="markdown-body"
+          [innerHTML]="renderedHtml"
+        ></div>
+        <div *ngIf="!currentTopic && !loading && !error" class="empty">
+          Select a topic from the sidebar.
+        </div>
+      </main>
     </div>
   `,
   styles: [`
-    .help-page { max-width: 900px; }
-    h1 { margin-bottom: 32px; }
-    .help-section { margin-bottom: 32px; }
-    h2 { font-size: 18px; margin-bottom: 12px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    ol, ul { padding-left: 24px; font-size: 14px; line-height: 2; }
+    .help-layout { display: flex; gap: 0; min-height: calc(100vh - 100px); margin: -24px; }
 
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .help-card {
-      display: flex; gap: 16px; padding: 16px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-      text-decoration: none; color: var(--text); transition: border-color 0.15s;
+    .help-sidebar {
+      width: 260px; min-width: 260px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      padding: 24px 16px; display: flex; flex-direction: column;
     }
-    .help-card:hover { border-color: var(--primary); }
-    .card-icon {
-      min-width: 48px; height: 48px; border-radius: 8px;
-      background: rgba(26,115,232,0.08); color: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700;
+    .help-sidebar h2 { font-size: 16px; margin-bottom: 12px; }
+    .search-input {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: 4px; font-size: 13px; margin-bottom: 12px;
     }
-    .card-body h3 { font-size: 14px; margin-bottom: 4px; }
-    .card-body p { font-size: 13px; color: var(--text-secondary); margin: 0; }
-    .card-body code { font-size: 12px; background: var(--background); padding: 2px 6px; border-radius: 3px; display: inline-block; margin-top: 6px; }
+    .help-sidebar nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .help-sidebar nav a {
+      padding: 8px 12px; border-radius: 4px; font-size: 14px; cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .help-sidebar nav a:hover { background: var(--background); }
+    .help-sidebar nav a.active { color: var(--primary); background: rgba(26,115,232,0.08); font-weight: 500; }
+    .help-meta { margin-top: auto; padding-top: 16px; font-size: 12px; color: var(--text-secondary); }
+    .help-meta a { font-size: 12px; }
+    .copyright { margin-top: 8px; }
 
-    .info-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .info-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-    .info-table td:first-child { font-weight: 600; width: 140px; color: var(--text-secondary); }
-    .info-table code { background: var(--background); padding: 2px 6px; border-radius: 3px; }
+    .help-content { flex: 1; padding: 32px 40px; overflow-y: auto; }
+    .loading, .error, .empty { color: var(--text-secondary); font-size: 14px; padding: 24px; }
+    .error { color: var(--error); }
 
-    .note { font-size: 13px; color: var(--text-secondary); margin-top: 8px; font-style: italic; }
-    .help-footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+    .markdown-body { font-size: 14px; line-height: 1.7; }
+    .markdown-body :first-child { margin-top: 0; }
+    .markdown-body h1 { font-size: 24px; margin: 0 0 16px; }
+    .markdown-body h2 { font-size: 18px; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .markdown-body h3 { font-size: 15px; margin: 20px 0 8px; }
+    .markdown-body p { margin: 8px 0; }
+    .markdown-body code {
+      background: var(--background); padding: 2px 6px; border-radius: 3px; font-size: 13px;
+    }
+    .markdown-body pre {
+      background: var(--background); padding: 16px; border-radius: 6px;
+      overflow-x: auto; margin: 12px 0;
+    }
+    .markdown-body pre code { background: none; padding: 0; }
+    .markdown-body table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .markdown-body th, .markdown-body td {
+      padding: 8px 12px; border: 1px solid var(--border); text-align: left; font-size: 13px;
+    }
+    .markdown-body th { background: var(--background); font-weight: 600; }
+    .markdown-body ul, .markdown-body ol { padding-left: 24px; }
+    .markdown-body li { margin: 4px 0; }
+    .markdown-body blockquote {
+      border-left: 3px solid var(--primary); margin: 12px 0; padding: 8px 16px;
+      color: var(--text-secondary); background: rgba(26,115,232,0.04);
+    }
+    .markdown-body a { color: var(--primary); }
+    .markdown-body strong { font-weight: 600; }
   `],
 })
-export class HelpComponent {
-  testUser = 'test@andy.local';
-  authAuthority = environment.authAuthority || 'https://localhost:5001';
-  swaggerUrl = environment.apiUrl.replace('/api', '') + '/swagger';
-  docsUrl = 'https://rivoli-ai.github.io/__SERVICE_KEBAB__';
-  repoUrl = 'https://github.com/rivoli-ai/__SERVICE_KEBAB__';
+export class HelpComponent implements OnInit {
+  topics: HelpTopicSummary[] = [];
+  currentTopic: HelpTopic | null = null;
+  selectedSlug = '';
+  renderedHtml = '';
+  loading = false;
+  error = '';
+  swaggerUrl = '/swagger';
+
+  private apiBase = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.loadTopics();
+  }
+
+  loadTopics(): void {
+    this.http.get<HelpTopicSummary[]>(`${this.apiBase}/help/topics`).subscribe({
+      next: (topics) => {
+        this.topics = topics;
+        if (topics.length > 0) {
+          this.selectTopic(topics[0].slug);
+        }
+      },
+      error: () => {
+        this.error = 'Could not load help topics.';
+      },
+    });
+  }
+
+  selectTopic(slug: string): void {
+    this.selectedSlug = slug;
+    this.loading = true;
+    this.error = '';
+    this.http.get<HelpTopic>(`${this.apiBase}/help/topics/${slug}`).subscribe({
+      next: (topic) => {
+        this.currentTopic = topic;
+        this.renderedHtml = this.renderMarkdown(topic.markdown);
+        this.loading = false;
+      },
+      error: () => {
+        this.error = `Could not load topic: ${slug}`;
+        this.loading = false;
+      },
+    });
+  }
+
+  onSearch(event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    if (!query.trim()) {
+      this.loadTopics();
+      return;
+    }
+    this.http.get<HelpTopicSummary[]>(`${this.apiBase}/help/search`, { params: { q: query } }).subscribe({
+      next: (topics) => {
+        this.topics = topics;
+      },
+    });
+  }
+
+  /**
+   * Minimal markdown-to-HTML renderer.
+   * For production, consider using 'marked' or 'ngx-markdown'.
+   */
+  private renderMarkdown(md: string): string {
+    let html = md
+      // Code blocks
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      // Headers
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+      // Blockquotes
+      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+      // Tables (basic: | col | col |)
+      .replace(/^\|(.+)\|$/gm, (match) => {
+        const cells = match.split('|').filter(c => c.trim()).map(c => c.trim());
+        if (cells.every(c => /^[-:]+$/.test(c))) return '';
+        const tag = match.includes('---') ? 'th' : 'td';
+        return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+      })
+      // Line breaks
+      .replace(/\n\n/g, '</p><p>')
+      // Unordered lists
+      .replace(/^- (.+)$/gm, '<li>$1</li>');
+
+    // Wrap <li> runs in <ul>
+    html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, '<ul>$&</ul>');
+    // Wrap <tr> runs in <table>
+    html = html.replace(/(<tr>[\s\S]*?<\/tr>\n?)+/g, '<table>$&</table>');
+
+    return `<p>${html}</p>`.replace(/<p><\/p>/g, '').replace(/<p>\s*<\/p>/g, '');
+  }
 }

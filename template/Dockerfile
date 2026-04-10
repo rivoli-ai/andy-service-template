@@ -88,6 +88,7 @@ RUN mkdir -p /https /app/.aspnet/DataProtection-Keys && \
 
 COPY --from=build /app/publish .
 COPY --from=node-build /node-build/dist/client/browser ./wwwroot
+COPY content/help ./content/help
 RUN chown -R appuser:appuser /app
 
 # Self-signed dev cert
