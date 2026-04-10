@@ -28,7 +28,9 @@ A fully scaffolded microservice with:
 | **Observability** | OpenTelemetry (traces, metrics, logs) |
 | **CLI** | Command-line tool with System.CommandLine |
 | **Docker** | Multi-stage Dockerfile, docker-compose with cert support |
-| **CI/CD** | GitHub Actions (build, test, docs, Docker push) |
+| **Secret Scanning** | Pre-commit hook + Gitleaks CI + `.gitleaks.toml` allowlist |
+| **Code Assistant** | `CLAUDE.md` with architecture, conventions, commands |
+| **CI/CD** | GitHub Actions (secret scan, build, test, docs, Docker push) |
 | **Tests** | Unit (xUnit) + Integration (WebApplicationFactory) + Frontend (Karma) |
 | **Docs** | MkDocs Material with architecture, security, deployment guides |
 | **Examples** | C#, Python, JavaScript, Java, Go, Rust, PowerShell |
@@ -49,15 +51,15 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 
 ### Compliance Status
 
-| Service | Clean Arch | Angular | Swagger | MCP | gRPC | Auth | RBAC | Settings | OTel | Docker | CI/CD |
-|---------|-----------|---------|---------|-----|------|------|------|----------|------|--------|-------|
-| andy-auth | Y | N | Y | N | N | - | N | N | N | Y | N |
-| andy-rbac | Y | Y | Y | N | N | Y | - | N | N | Y | N |
-| andy-containers | Y | Y | Y | N | N | Y | N | N | N | Y | N |
-| andy-settings | Y | N | Y | N | N | Y | Y | - | N | Y | N |
-| andy-code-index | Y | N | Y | Y | N | Y | N | N | N | Y | N |
-| andy-narration | Y | Y | Y | Y | N | Y | Y | N | conf | Y | Y |
-| **Template** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** |
+| Service | Clean Arch | Angular | Swagger | MCP | gRPC | Auth | RBAC | Settings | OTel | Docker | CI/CD | Secrets | CLAUDE.md |
+|---------|-----------|---------|---------|-----|------|------|------|----------|------|--------|-------|---------|-----------|
+| andy-auth | Y | N | Y | N | N | - | N | N | N | Y | N | N | N |
+| andy-rbac | Y | Y | Y | N | N | Y | - | N | N | Y | N | N | N |
+| andy-containers | Y | Y | Y | N | N | Y | N | N | N | Y | N | N | N |
+| andy-settings | Y | N | Y | N | N | Y | Y | - | N | Y | N | N | N |
+| andy-code-index | Y | N | Y | Y | N | Y | N | N | N | Y | N | N | N |
+| andy-narration | Y | Y | Y | Y | N | Y | Y | N | conf | Y | Y | N | N |
+| **Template** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** |
 
 > Run `./scripts/check-compliance.sh ../andy-<service>` to audit any project.
 
@@ -71,11 +73,42 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 | `./scripts/register-auth-client.sh` | Register OAuth clients in Andy Auth |
 | `./scripts/register-rbac-application.sh` | Register application in Andy RBAC |
 
+## Secret Scanning
+
+Every generated service includes three layers of protection against committing secrets:
+
+| Layer | Location | When |
+|-------|----------|------|
+| **Pre-commit hook** | `.githooks/pre-commit` | Before every local commit |
+| **Gitleaks CI** | `.github/workflows/ci.yml` | Every push and PR (blocks build) |
+| **Gitleaks config** | `.gitleaks.toml` | Allowlists dev-only defaults |
+
+### Setup (after scaffolding)
+
+```bash
+# Install the pre-commit hook
+./scripts/setup-git-hooks.sh
+```
+
+The hook scans staged files for: passwords, API keys, AWS credentials (`AKIA...`), GitHub PATs (`ghp_...`), OpenAI keys (`sk-...`), private keys, and database connection strings with embedded credentials.
+
+Dev-only defaults (`_dev_password`, `devcert`, `Test123!`) are allowlisted in `.gitleaks.toml` and won't trigger alerts.
+
+## Code Assistant
+
+Each generated service includes a `CLAUDE.md` file providing AI code assistants with full context:
+architecture, coding conventions, naming patterns, common commands, port assignments, auth/RBAC setup,
+testing requirements, and database strategy. This follows the pattern established in `andy-cli`,
+`andy-engine`, and `conductor`.
+
 ## Template Structure
 
 ```
 template/
-  .github/workflows/       CI/CD (build, test, docs, Docker)
+  .github/workflows/       CI/CD (secret scan, build, test, docs, Docker)
+  .githooks/               Pre-commit secret scanning hook
+  .gitleaks.toml           Gitleaks allowlist config
+  CLAUDE.md                Code assistant development guide
   certs/                   Corporate CA certificates
   client/                  Angular 18 SPA
     src/app/
@@ -87,6 +120,7 @@ template/
   config/                  Auth & RBAC seed data
   docs/                    MkDocs documentation
   examples/                Multi-language API examples
+  scripts/                 setup-git-hooks.sh
   src/
     *.Domain/              Entities, enums
     *.Application/         Interfaces, DTOs
