@@ -18,9 +18,24 @@ public partial class HelpController : ControllerBase
 {
     private readonly string _helpDir;
 
-    public HelpController(IWebHostEnvironment env)
+    public HelpController(IWebHostEnvironment env, IConfiguration config)
     {
-        _helpDir = Path.Combine(env.ContentRootPath, "content", "help");
+        // Check explicit config first, then resolve from repo root (3 levels up from src/X.Api/)
+        var configured = config["Help:ContentPath"];
+        if (!string.IsNullOrEmpty(configured))
+        {
+            _helpDir = Path.GetFullPath(configured, env.ContentRootPath);
+        }
+        else
+        {
+            // Development: content/help/ at repo root (../../.. from src/X.Api/)
+            var repoRoot = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", ".."));
+            _helpDir = Path.Combine(repoRoot, "content", "help");
+
+            // Docker/published: content/help/ next to the dll
+            if (!Directory.Exists(_helpDir))
+                _helpDir = Path.Combine(env.ContentRootPath, "content", "help");
+        }
     }
 
     /// <summary>

@@ -9,16 +9,25 @@ namespace __SERVICE_PASCAL__.Api.Mcp;
 [McpServerToolType]
 public static class HelpTools
 {
-    [McpServerTool, Description("List all available help topics for this service")]
-    public static async Task<string> ListHelpTopics(IWebHostEnvironment env)
+    private static string ResolveHelpDir(IWebHostEnvironment env)
     {
-        var helpDir = Path.Combine(env.ContentRootPath, "content", "help");
+        var repoRoot = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", ".."));
+        var dir = Path.Combine(repoRoot, "content", "help");
+        if (!Directory.Exists(dir))
+            dir = Path.Combine(env.ContentRootPath, "content", "help");
+        return dir;
+    }
+
+    [McpServerTool, Description("List all available help topics for this service")]
+    public static Task<string> ListHelpTopics(IWebHostEnvironment env)
+    {
+        var helpDir = ResolveHelpDir(env);
         if (!Directory.Exists(helpDir))
-            return "No help topics available.";
+            return Task.FromResult("No help topics available.");
 
         var files = Directory.GetFiles(helpDir, "*.md").OrderBy(f => f).ToList();
         if (files.Count == 0)
-            return "No help topics available.";
+            return Task.FromResult("No help topics available.");
 
         var topics = files.Select(f =>
         {
@@ -28,19 +37,19 @@ public static class HelpTools
             return $"- {title} (slug: {slug})";
         });
 
-        return $"Help topics:\n{string.Join("\n", topics)}";
+        return Task.FromResult($"Help topics:\n{string.Join("\n", topics)}");
     }
 
     [McpServerTool, Description("Get the content of a help topic by its slug (e.g., 'getting-started', 'api-access', 'authentication')")]
-    public static async Task<string> GetHelpTopic(
+    public static Task<string> GetHelpTopic(
         IWebHostEnvironment env,
         [Description("The help topic slug (filename without .md extension)")] string slug)
     {
-        var helpDir = Path.Combine(env.ContentRootPath, "content", "help");
+        var helpDir = ResolveHelpDir(env);
         var filePath = Path.Combine(helpDir, $"{slug}.md");
 
         if (!File.Exists(filePath))
-            return $"Help topic '{slug}' not found. Use ListHelpTopics to see available topics.";
+            return Task.FromResult($"Help topic '{slug}' not found. Use ListHelpTopics to see available topics.");
 
         var content = File.ReadAllText(filePath);
 
@@ -52,17 +61,17 @@ public static class HelpTools
                 content = content[(end + 3)..].Trim();
         }
 
-        return content;
+        return Task.FromResult(content);
     }
 
     [McpServerTool, Description("Search help topics by keyword")]
-    public static async Task<string> SearchHelp(
+    public static Task<string> SearchHelp(
         IWebHostEnvironment env,
         [Description("Search keyword")] string query)
     {
-        var helpDir = Path.Combine(env.ContentRootPath, "content", "help");
+        var helpDir = ResolveHelpDir(env);
         if (!Directory.Exists(helpDir))
-            return "No help topics available.";
+            return Task.FromResult("No help topics available.");
 
         var q = query.ToLowerInvariant();
         var matches = Directory.GetFiles(helpDir, "*.md")
@@ -76,9 +85,9 @@ public static class HelpTools
             .ToList();
 
         if (matches.Count == 0)
-            return $"No help topics match '{query}'.";
+            return Task.FromResult($"No help topics match '{query}'.");
 
-        return $"Matching topics:\n{string.Join("\n", matches)}";
+        return Task.FromResult($"Matching topics:\n{string.Join("\n", matches)}");
     }
 
     private static string? ExtractTitle(string content)
