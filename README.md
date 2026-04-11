@@ -50,6 +50,7 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 | **Template default** | **5400** | **5401** | **5442** | **4202** | Template |
 | andy-issues | 5410 | 5411 | 5443 | 4203 | Scaffolded |
 | andy-agents | 5420 | 5421 | 5444 | 4204 | Scaffolded |
+| andy-tasks | 5430 | 5431 | 5445 | 4205 | Scaffolded |
 
 ### Compliance Status
 
@@ -63,6 +64,7 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 | andy-narration | Y | Y | Y | Y | N | Y | Y | N | conf | Y | Y | N | N |
 | andy-issues | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | andy-agents | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| andy-tasks | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | **Template** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** | **Y** |
 
 > Run `./scripts/check-compliance.sh ../andy-<service>` to audit any project.

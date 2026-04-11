@@ -58,6 +58,10 @@ KNOWN_PORT_LIST=(
   "andy-agents-http:5421"
   "andy-agents-pg:5444"
   "andy-agents-client:4204"
+  "andy-tasks-https:5430"
+  "andy-tasks-http:5431"
+  "andy-tasks-pg:5445"
+  "andy-tasks-client:4205"
 )
 
 # --- Defaults ---
