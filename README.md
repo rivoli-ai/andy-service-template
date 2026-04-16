@@ -2,6 +2,8 @@
 
 Everything to get started and create a new service in the Andy ecosystem: API (REST/Swagger, MCP, gRPC), Angular front-end, PostgreSQL/SQLite, OpenTelemetry, integration with Andy Auth, Andy RBAC, and Andy Settings.
 
+See [`docs/ports.md`](docs/ports.md) for the canonical port registry (standalone + Conductor-embedded).
+
 ## Quick Start
 
 ```bash
