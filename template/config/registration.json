@@ -1,0 +1,71 @@
+{
+  "$schema": "../../andy-service-template/docs/registration.schema.json",
+  "service": {
+    "name": "__SERVICE_KEBAB__",
+    "displayName": "__SERVICE_DISPLAY__",
+    "description": "__SERVICE_DESCRIPTION__",
+    "embeddedProxyPrefix": "/__SERVICE_SUFFIX__",
+    "ports": {
+      "dotnetHttps": __PORT_HTTPS__,
+      "dotnetHttp": __PORT_HTTP__,
+      "dotnetPostgres": __PORT_PG__,
+      "dotnetClient": __PORT_CLIENT__,
+      "dockerHttps": __PORT_HTTPS_DOCKER__,
+      "dockerHttp": __PORT_HTTP_DOCKER__,
+      "dockerPostgres": __PORT_PG_DOCKER__,
+      "dockerClient": __PORT_CLIENT_DOCKER__,
+      "embeddedProxy": 9100
+    }
+  },
+  "auth": {
+    "audience": "urn:__SERVICE_KEBAB__-api",
+    "apiClient": {
+      "clientId": "__SERVICE_KEBAB__-api",
+      "clientSecretEnvVar": "__SERVICE_SCREAMING___API_SECRET",
+      "displayName": "__SERVICE_DISPLAY__ API",
+      "description": "Service-to-service client for __SERVICE_DISPLAY__",
+      "grantTypes": ["authorization_code", "refresh_token", "client_credentials"],
+      "scopes": ["email", "profile", "roles", "scp:urn:__SERVICE_KEBAB__-api"]
+    },
+    "webClient": {
+      "clientId": "__SERVICE_KEBAB__-web",
+      "clientType": "public",
+      "displayName": "__SERVICE_DISPLAY__ Web",
+      "description": "Angular SPA for __SERVICE_DISPLAY__",
+      "grantTypes": ["authorization_code", "refresh_token"],
+      "scopes": ["email", "profile", "roles", "scp:urn:__SERVICE_KEBAB__-api"],
+      "redirectUris": [
+        "https://localhost:__PORT_CLIENT__/callback",
+        "https://localhost:__PORT_CLIENT_DOCKER__/callback",
+        "http://localhost:9100/__SERVICE_SUFFIX__/callback"
+      ],
+      "postLogoutRedirectUris": [
+        "https://localhost:__PORT_CLIENT__/",
+        "https://localhost:__PORT_CLIENT_DOCKER__/",
+        "http://localhost:9100/__SERVICE_SUFFIX__/"
+      ]
+    },
+    "productionUris": {
+      "redirectUris": [],
+      "postLogoutRedirectUris": []
+    }
+  },
+  "rbac": {
+    "applicationCode": "__SERVICE_KEBAB__",
+    "applicationName": "__SERVICE_DISPLAY__",
+    "description": "__SERVICE_DESCRIPTION__",
+    "resourceTypes": [
+      { "code": "item", "name": "Item", "supportsInstances": true },
+      { "code": "settings", "name": "Settings", "supportsInstances": false }
+    ],
+    "roles": [
+      { "code": "admin", "name": "Administrator", "description": "Full access", "isSystem": true },
+      { "code": "user", "name": "User", "description": "Standard user", "isSystem": true },
+      { "code": "viewer", "name": "Viewer", "description": "Read-only access", "isSystem": true }
+    ],
+    "testUserRole": "admin"
+  },
+  "settings": {
+    "definitions": []
+  }
+}

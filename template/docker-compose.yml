@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: __SERVICE_SNAKE___dev_password
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "__PORT_PG__:5432"
+      - "__PORT_PG_DOCKER__:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -41,8 +41,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "__PORT_HTTPS__:8443"
-      - "__PORT_HTTP__:8080"
+      - "__PORT_HTTPS_DOCKER__:8443"
+      - "__PORT_HTTP_DOCKER__:8080"
     volumes:
       - ./certs:/usr/local/share/ca-certificates/custom:ro
       - dpkeys:/app/.aspnet/DataProtection-Keys
@@ -55,6 +55,20 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    restart: unless-stopped
+    networks:
+      - __SERVICE_KEBAB__-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: __SERVICE_KEBAB__-client
+    ports:
+      - "__PORT_CLIENT_DOCKER__:80"
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - __SERVICE_KEBAB__-network

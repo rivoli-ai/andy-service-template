@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rivoli-ai.github.io/andy-service-template/registration.schema.json",
+  "title": "Andy Service Registration Manifest",
+  "description": "Declarative registration for an Andy ecosystem service. Consumed by andy-auth (OAuth clients, scopes), andy-rbac (application + roles + resource types), andy-settings (setting definitions). Every service in the Andy ecosystem ships one at config/registration.json.",
+  "type": "object",
+  "required": ["service", "auth", "rbac"],
+  "properties": {
+    "service": {
+      "type": "object",
+      "required": ["name", "displayName", "description", "embeddedProxyPrefix", "ports"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^andy-[a-z][a-z0-9-]*$" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "embeddedProxyPrefix": { "type": "string", "pattern": "^/[a-z][a-z0-9-]*$" },
+        "ports": {
+          "type": "object",
+          "required": ["dotnetHttps", "dotnetHttp", "dotnetPostgres", "dockerHttps", "dockerHttp", "dockerPostgres", "embeddedProxy"],
+          "properties": {
+            "dotnetHttps":    { "type": "integer" },
+            "dotnetHttp":     { "type": "integer" },
+            "dotnetPostgres": { "type": "integer" },
+            "dotnetClient":   { "type": "integer" },
+            "dockerHttps":    { "type": "integer" },
+            "dockerHttp":     { "type": "integer" },
+            "dockerPostgres": { "type": "integer" },
+            "dockerClient":   { "type": "integer" },
+            "embeddedProxy":  { "type": "integer", "const": 9100 }
+          }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["audience", "webClient"],
+      "properties": {
+        "audience": { "type": "string", "pattern": "^urn:" },
+        "apiClient": { "$ref": "#/$defs/oauthClient" },
+        "webClient": { "$ref": "#/$defs/oauthClient" },
+        "cliClient": { "$ref": "#/$defs/oauthClient" },
+        "productionUris": {
+          "type": "object",
+          "properties": {
+            "redirectUris": { "type": "array", "items": { "type": "string", "format": "uri" } },
+            "postLogoutRedirectUris": { "type": "array", "items": { "type": "string", "format": "uri" } }
+          }
+        }
+      }
+    },
+    "rbac": {
+      "type": "object",
+      "required": ["applicationCode", "applicationName", "roles"],
+      "properties": {
+        "applicationCode": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "applicationName": { "type": "string" },
+        "description": { "type": "string" },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "name"],
+            "properties": {
+              "code": { "type": "string" },
+              "name": { "type": "string" },
+              "supportsInstances": { "type": "boolean" }
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "name"],
+            "properties": {
+              "code": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "isSystem": { "type": "boolean" }
+            }
+          }
+        },
+        "testUserRole": { "type": "string", "description": "Role code assigned to test@andy.local during dev seeding." }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "definitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "dataType"],
+            "properties": {
+              "key": { "type": "string" },
+              "displayName": { "type": "string" },
+              "description": { "type": "string" },
+              "category": { "type": "string" },
+              "dataType": {
+                "type": "string",
+                "enum": ["String", "Integer", "Boolean", "Secret", "Uri", "StringList", "Json"]
+              },
+              "defaultValue": { "description": "JSON-encoded default value. For secrets, omit." },
+              "isSecret": { "type": "boolean" },
+              "allowedScopes": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["Machine", "Application", "User", "Team"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "oauthClient": {
+      "type": "object",
+      "required": ["clientId", "displayName"],
+      "properties": {
+        "clientId": { "type": "string" },
+        "clientType": { "type": "string", "enum": ["public", "confidential"] },
+        "clientSecretEnvVar": { "type": "string", "description": "Name of env var that holds the client secret at runtime. Manifest never carries the secret itself." },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "grantTypes": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["authorization_code", "refresh_token", "client_credentials", "device_code"] }
+        },
+        "scopes": { "type": "array", "items": { "type": "string" } },
+        "redirectUris": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "postLogoutRedirectUris": { "type": "array", "items": { "type": "string", "format": "uri" } }
+      }
+    }
+  }
+}
