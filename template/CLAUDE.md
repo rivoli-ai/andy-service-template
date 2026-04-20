@@ -59,8 +59,7 @@ __SERVICE_KEBAB__/
 │   ├── angular.json
 │   └── package.json
 ├── config/
-│   ├── auth-seed.sql            # Andy Auth OAuth client registration
-│   └── rbac-seed.json           # Andy RBAC application/role/permission seed
+│   └── registration.json        # Single registration manifest consumed by andy-auth, andy-rbac, andy-settings at seed time (OAuth clients + RBAC app + setting definitions). Schema: andy-service-template/docs/registration.schema.json
 ├── docs/                        # MkDocs documentation
 ├── examples/                    # Multi-language API usage examples
 ├── local-packages/              # Local NuGet packages

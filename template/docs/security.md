@@ -18,7 +18,7 @@ Two OAuth clients are registered in Andy Auth:
 1. **`__SERVICE_KEBAB__-api`** (Confidential) - For service-to-service communication
 2. **`__SERVICE_KEBAB__-web`** (Public) - For the Angular SPA
 
-See `config/auth-seed.sql` for the seed data.
+See `config/registration.json` (the `auth` section) for the OAuth client declarations — andy-auth reads manifests from every sibling service at startup and seeds its OpenIddict catalog from them.
 
 ### Test User
 
@@ -36,7 +36,7 @@ Role-based access control is provided by [Andy RBAC](https://github.com/rivoli-a
 - **Roles**: admin, user, viewer
 - **Actions**: read, write, delete, admin
 
-See `config/rbac-seed.json` for the RBAC configuration.
+See `config/registration.json` (the `rbac` section) for the application, resource types, and roles. andy-rbac reads sibling manifests on startup and seeds its catalog from them.
 
 ## Transport Security
 

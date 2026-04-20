@@ -191,6 +191,16 @@ SERVICE_PARTS=$(to_pascal "$SERVICE_PARTS_RAW")
 SERVICE_PASCAL="Andy.${SERVICE_PARTS}"                                           # Andy.HwBridge
 SERVICE_PASCAL_NOPUNCT=$(echo "$SERVICE_PASCAL" | tr -d '.')                     # AndyHwBridge
 SERVICE_DISPLAY="Andy ${SERVICE_PARTS}"                                          # Andy HwBridge
+SERVICE_SUFFIX="$SERVICE_PARTS_RAW"                                              # hw-bridge (proxy prefix, no andy-)
+SERVICE_SCREAMING=$(echo "$SERVICE_SNAKE" | tr '[:lower:]' '[:upper:]')          # ANDY_HW_BRIDGE
+
+# --- Derive Mode 2 (docker) ports from Mode 1 (dotnet) ports ---
+# Convention: docker host binding = dotnet port + 2000 for services / postgres,
+# +2000 for Angular client (4xxx → 6xxx). See docs/ports.md.
+PORT_HTTPS_DOCKER=$((PORT_HTTPS + 2000))
+PORT_HTTP_DOCKER=$((PORT_HTTP + 2000))
+PORT_PG_DOCKER=$((PORT_PG + 2000))
+PORT_CLIENT_DOCKER=$((PORT_CLIENT + 2000))
 
 echo ""
 info "Service configuration:"
@@ -199,7 +209,8 @@ echo "  Pascal:      $SERVICE_PASCAL"
 echo "  Display:     $SERVICE_DISPLAY"
 echo "  Description: $SERVICE_DESCRIPTION"
 echo "  Target:      $TARGET_DIR"
-echo "  Ports:       HTTPS=$PORT_HTTPS  HTTP=$PORT_HTTP  PG=$PORT_PG  Client=$PORT_CLIENT"
+echo "  Mode 1 (dotnet): HTTPS=$PORT_HTTPS  HTTP=$PORT_HTTP  PG=$PORT_PG  Client=$PORT_CLIENT"
+echo "  Mode 2 (docker): HTTPS=$PORT_HTTPS_DOCKER  HTTP=$PORT_HTTP_DOCKER  PG=$PORT_PG_DOCKER  Client=$PORT_CLIENT_DOCKER"
 echo ""
 
 read -rp "Proceed? [Y/n]: " confirm
@@ -251,6 +262,8 @@ SED_ARGS=(
   -e "s|__SERVICE_NAME__|${SERVICE_NAME}|g"
   -e "s|__SERVICE_KEBAB__|${SERVICE_KEBAB}|g"
   -e "s|__SERVICE_SNAKE__|${SERVICE_SNAKE}|g"
+  -e "s|__SERVICE_SCREAMING__|${SERVICE_SCREAMING}|g"
+  -e "s|__SERVICE_SUFFIX__|${SERVICE_SUFFIX}|g"
   -e "s|__SERVICE_PASCAL__|${SERVICE_PASCAL}|g"
   -e "s|__SERVICE_PASCAL_NOPUNCT__|${SERVICE_PASCAL_NOPUNCT}|g"
   -e "s|__SERVICE_DISPLAY__|${SERVICE_DISPLAY}|g"
@@ -259,6 +272,10 @@ SED_ARGS=(
   -e "s|__PORT_HTTP__|${PORT_HTTP}|g"
   -e "s|__PORT_PG__|${PORT_PG}|g"
   -e "s|__PORT_CLIENT__|${PORT_CLIENT}|g"
+  -e "s|__PORT_HTTPS_DOCKER__|${PORT_HTTPS_DOCKER}|g"
+  -e "s|__PORT_HTTP_DOCKER__|${PORT_HTTP_DOCKER}|g"
+  -e "s|__PORT_PG_DOCKER__|${PORT_PG_DOCKER}|g"
+  -e "s|__PORT_CLIENT_DOCKER__|${PORT_CLIENT_DOCKER}|g"
   -e "s|__GUID_SRC__|${GUID_SRC}|g"
   -e "s|__GUID_DOMAIN__|${GUID_DOMAIN}|g"
   -e "s|__GUID_APPLICATION__|${GUID_APPLICATION}|g"
@@ -325,15 +342,14 @@ ok "Service '$SERVICE_NAME' created at $TARGET_DIR"
 echo ""
 info "Next steps:"
 echo "  1. cd $TARGET_DIR"
-echo "  2. dotnet restore && dotnet build"
-echo "  3. cd client && npm install"
-echo "  4. Register OAuth client in Andy Auth (see config/auth-seed.sql)"
-echo "  5. Register RBAC application in Andy RBAC (see config/rbac-seed.json)"
-echo "  6. docker compose up -d postgres"
-echo "  7. dotnet run --project src/${SERVICE_PASCAL}.Api"
+echo "  2. docker compose up -d              # full stack (postgres + api + client)"
+echo "     — or —"
+echo "     dotnet restore && dotnet build    # then dotnet run + npm start for Mode 1"
+echo "  3. OAuth clients + RBAC app + setting definitions are declared in"
+echo "     config/registration.json — andy-auth / andy-rbac / andy-settings"
+echo "     pick it up automatically on their next seed cycle. Schema:"
+echo "     andy-service-template/docs/registration.schema.json."
 echo ""
 info "Port registry for this service:"
-echo "  API HTTPS:   $PORT_HTTPS"
-echo "  API HTTP:    $PORT_HTTP"
-echo "  PostgreSQL:  $PORT_PG"
-echo "  Client:      $PORT_CLIENT"
+echo "  Mode 1 (dotnet)  HTTPS=$PORT_HTTPS  HTTP=$PORT_HTTP  PG=$PORT_PG  Client=$PORT_CLIENT"
+echo "  Mode 2 (docker)  HTTPS=$PORT_HTTPS_DOCKER  HTTP=$PORT_HTTP_DOCKER  PG=$PORT_PG_DOCKER  Client=$PORT_CLIENT_DOCKER"

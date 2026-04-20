@@ -15,8 +15,13 @@ RUN find /tmp/certs/ -name '.git*' -delete 2>/dev/null || true && \
 
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-COPY client/package.json client/package-lock.json ./
-RUN npm ci
+# Use `npm install` rather than `npm ci` because the template's
+# package-lock.json can drift from package.json across Angular minor
+# upgrades. npm install tolerates the drift and regenerates the lock
+# in-image; sibling services committing their lockfile get
+# deterministic local builds via `npm ci` in CI.
+COPY client/package.json client/package-lock.json* ./
+RUN npm install --no-audit --no-fund
 COPY client/ ./
 RUN npx ng build --configuration docker
 
