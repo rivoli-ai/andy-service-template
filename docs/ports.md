@@ -26,6 +26,8 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-rbac | 5003 | 5004 | 5433 | — |
 | andy-code-index | 5101 | 5102 | 5436 | 4201 |
 | andy-docs | 5110 | 5111 | 5437 | 4202 |
+| andy-policies | 5112 | 5113 | 5439 | 4206 |
+| andy-models | 5120 | 5121 | 5441 | 4207 |
 | andy-containers | 5200 | 5201 | 5434 | 4200 |
 | andy-settings | 5300 | 5301 | 5438 | — |
 | andy-narration | 5310 | 5311 | 5440 | — |
@@ -49,6 +51,8 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-rbac | 7003 | 7004 | 7433 | — |
 | andy-code-index | 7101 | 7102 | 7436 | 6201 |
 | andy-docs | 7110 | 7111 | 7437 | 6202 |
+| andy-policies | 7112 | 7113 | 7439 | 6206 |
+| andy-models | 7120 | 7121 | 7441 | 6207 |
 | andy-containers | 7200 | 7201 | 7434 | 6200 |
 | andy-settings | 7300 | 7301 | 7438 | — |
 | andy-narration | 7310 | 7311 | 7440 | — |
@@ -78,11 +82,13 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-issues | `/issues` | 9108 | `http://localhost:9100/issues` |
 | andy-agents | `/agents` | 9109 | `http://localhost:9100/agents` |
 | andy-tasks | `/tasks` | 9110 | `http://localhost:9100/tasks` |
+| andy-policies | `/policies` | 9111 | `http://localhost:9100/policies` |
+| andy-models | `/models` | 9112 | `http://localhost:9100/models` |
 
 **Gaps:**
 
 - `9104` was `andy-devpilot` before it was split into `andy-issues` + `andy-agents`. Reserved, don't reassign.
-- `9111+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
+- `9113+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
 
 **Config touch-points (for Conductor mode):**
 - `Conductor/Core/ServiceHost/Services/<Service>ServiceConfig.swift` — `defaultPort`, `proxyPath`, service name.
@@ -124,12 +130,12 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 | `andy-mcp-gateway` | README currently uses `https://localhost:5001`, which collides with `andy-auth`. Needs a canonical assignment — probably in the 5500 range. |
 | `andy-devpilot` | Deprecated; its responsibilities were split into `andy-issues` (story CRUD) and `andy-agents` (sandbox execution). |
 
-## Next free slots (as of 2026-04-16)
+## Next free slots (as of 2026-04-20)
 
-- HTTPS / HTTP pair (Mode 1): `5112/5113`, `5120/5121`, `5210/5211`, `5400/5401`, `5500+`
-- Postgres (Mode 1): `5439`, `5441`, `5442`, `5446+`
-- Angular client (Mode 1): `4206+`
-- Conductor embedded: `9111+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5500+`
+- Postgres (Mode 1): `5442`, `5446+`
+- Angular client (Mode 1): `4208+`
+- Conductor embedded: `9113+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 
