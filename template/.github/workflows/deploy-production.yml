@@ -1,0 +1,236 @@
+name: Deploy to Production
+
+# Canonical Andy deploy workflow — Production.
+# Lifted from rivoli-ai/andy-auth + rivoli-ai/andy-docs working shape.
+# Closes rivoli-ai/andy-service-template#6 (E3-S1).
+#
+# Secret contract: see docs/deploy-workflows.md.
+# Production deploys are gated on rivoli-ai/conductor#800 (security audit) for
+# affected services per E1 / the Andy deploy-program (rivoli-ai/conductor#845).
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20'
+
+jobs:
+  test:
+    name: Run Full Test Suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: __SERVICE_SNAKE___test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release --verbosity normal
+        env:
+          Database__Provider: PostgreSql
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=__SERVICE_SNAKE___test;Username=postgres;Password=postgres"
+
+  backup-production:
+    name: Backup Production Database
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      # Project the optional secret into a literal 'true'/'false' string we can
+      # branch on with `if: env.HAS_S3 == 'true'`. The `secrets` context is not
+      # allowed in `if:` evaluation directly; this projection works because
+      # `env:` mappings DO permit ${{ secrets.* }} expansion.
+      HAS_S3: ${{ secrets.AWS_S3_BUCKET != '' && 'true' || 'false' }}
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Take pg_dump
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          pg_dump "${{ secrets.PROD_DATABASE_CONNECTION_STRING }}" > "backup_${TIMESTAMP}.sql"
+          echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> "$GITHUB_ENV"
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-backup-${{ env.BACKUP_FILE }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+
+      - name: Upload backup to Cloud Storage (optional)
+        if: env.HAS_S3 == 'true'
+        run: aws s3 cp "${{ env.BACKUP_FILE }}" "s3://${{ secrets.AWS_S3_BUCKET }}/backups/"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  deploy-backend:
+    name: Deploy Backend (Railway Production)
+    needs: [test, backup-production]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://__SERVICE_SUFFIX__-api.wagram.ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node (for Railway CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service backend --environment production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PROD }}
+
+      - name: Apply EF migrations
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update \
+            --project src/__SERVICE_PASCAL__.Infrastructure \
+            --startup-project src/__SERVICE_PASCAL__.Api \
+            --configuration Release
+        env:
+          Database__Provider: PostgreSql
+          ConnectionStrings__DefaultConnection: ${{ secrets.PROD_DATABASE_CONNECTION_STRING }}
+
+      - name: Tag deployment
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          DEPLOYMENT_TAG="prod_${TIMESTAMP}"
+          git tag -a "$DEPLOYMENT_TAG" -m "Production deployment $DEPLOYMENT_TAG"
+          git push origin "$DEPLOYMENT_TAG"
+
+  detect-client:
+    name: Detect Angular client
+    runs-on: ubuntu-latest
+    outputs:
+      has_client: ${{ steps.check.outputs.has_client }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f client/package.json ]; then
+            echo "has_client=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_client=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy-frontend:
+    name: Deploy Frontend (Vercel Production)
+    needs: [test, deploy-backend, detect-client]
+    if: needs.detect-client.outputs.has_client == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://__SERVICE_SUFFIX__.wagram.ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Configure GitHub Packages auth (for @omnifex/* deps)
+        run: |
+          {
+            echo "@omnifex:registry=https://npm.pkg.github.com"
+            echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_PACKAGES_TOKEN }}"
+          } > client/.npmrc
+
+      - name: Install + build SPA
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
+          working-directory: ./client
+          vercel-args: '--prod'
+          alias-domains: |
+            __SERVICE_SUFFIX__.wagram.ai
+
+  smoke-tests:
+    name: Production Smoke Tests
+    needs: [deploy-backend, deploy-frontend]
+    if: always() && needs.deploy-backend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check (backend)
+        run: |
+          for _ in {1..10}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.PROD_API_URL }}/health")
+            if [ "$response" = "200" ]; then
+              echo "✅ Backend healthy"
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "❌ Backend did not return 200 within 60s"
+          exit 1
+
+  rollback-on-failure:
+    name: Rollback if smoke tests fail
+    needs: smoke-tests
+    if: failure()
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find previous deployment tag
+        id: previous
+        run: |
+          PREVIOUS_TAG=$(git tag --list 'prod_*' | sort -r | sed -n '2p')
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Rollback Backend (Railway)
+        if: steps.previous.outputs.PREVIOUS_TAG != ''
+        run: |
+          npm install -g @railway/cli
+          railway rollback --service backend --environment production --tag "${{ steps.previous.outputs.PREVIOUS_TAG }}"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PROD }}
+
+      - name: Notify rollback
+        run: |
+          echo "⚠️ Production deploy failed; rolled back to ${{ steps.previous.outputs.PREVIOUS_TAG }}"
+          echo "Database rollback: download backup from artifacts and restore manually if needed."

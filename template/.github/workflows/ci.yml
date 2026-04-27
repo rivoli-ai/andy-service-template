@@ -11,6 +11,16 @@ env:
   NODE_VERSION: '22'
 
 jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download actionlint
+        id: actionlint
+        run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+      - name: Run actionlint
+        run: ${{ steps.actionlint.outputs.executable }} -color
+
   build-backend:
     runs-on: ubuntu-latest
     steps:
