@@ -1,0 +1,165 @@
+name: Deploy to UAT
+
+# Canonical Andy deploy workflow — UAT.
+# Lifted from rivoli-ai/andy-auth + rivoli-ai/andy-docs working shape.
+# Closes rivoli-ai/andy-service-template#6 (E3-S1).
+#
+# Secret contract: see docs/deploy-workflows.md.
+# Naming convention: __SERVICE_SUFFIX__ is the part after `andy-` (e.g., "auth",
+# "docs", "rbac"). Replace via create-service.sh substitution.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: __SERVICE_SNAKE___test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --configuration Release --verbosity normal
+        env:
+          Database__Provider: PostgreSql
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=__SERVICE_SNAKE___test;Username=postgres;Password=postgres"
+
+  deploy-backend:
+    name: Deploy Backend (Railway UAT)
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: uat
+      url: https://__SERVICE_SUFFIX__-api.uat.wagram.ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node (for Railway CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service backend --environment uat
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_UAT }}
+
+      - name: Apply EF migrations
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update \
+            --project src/__SERVICE_PASCAL__.Infrastructure \
+            --startup-project src/__SERVICE_PASCAL__.Api \
+            --configuration Release
+        env:
+          Database__Provider: PostgreSql
+          ConnectionStrings__DefaultConnection: ${{ secrets.UAT_DATABASE_CONNECTION_STRING }}
+
+  detect-client:
+    name: Detect Angular client
+    runs-on: ubuntu-latest
+    outputs:
+      has_client: ${{ steps.check.outputs.has_client }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f client/package.json ]; then
+            echo "has_client=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_client=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy-frontend:
+    name: Deploy Frontend (Vercel UAT)
+    needs: [test, detect-client]
+    if: needs.detect-client.outputs.has_client == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: uat
+      url: https://__SERVICE_SUFFIX__.uat.wagram.ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Configure GitHub Packages auth (for @omnifex/* deps)
+        run: |
+          {
+            echo "@omnifex:registry=https://npm.pkg.github.com"
+            echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_PACKAGES_TOKEN }}"
+          } > client/.npmrc
+
+      - name: Install + build SPA
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_UAT }}
+          working-directory: ./client
+          vercel-args: '--prod'
+          alias-domains: |
+            __SERVICE_SUFFIX__.uat.wagram.ai
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: [deploy-backend, deploy-frontend]
+    if: always() && needs.deploy-backend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check (backend)
+        run: |
+          for _ in {1..10}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.UAT_API_URL }}/health")
+            if [ "$response" = "200" ]; then
+              echo "✅ Backend healthy"
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "❌ Backend did not return 200 within 60s"
+          exit 1
