@@ -74,6 +74,10 @@ KNOWN_PORT_LIST=(
   "andy-tasks-http:5431"
   "andy-tasks-pg:5445"
   "andy-tasks-client:4205"
+  "andy-ports-https:5500"
+  "andy-ports-http:5501"
+  "andy-ports-pg:5446"
+  "andy-ports-client:4208"
 )
 
 # --- Defaults ---
