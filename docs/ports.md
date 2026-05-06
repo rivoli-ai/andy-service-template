@@ -34,6 +34,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-issues | 5410 | 5411 | 5443 | 4203 |
 | andy-agents | 5420 | 5421 | 5444 | 4204 |
 | andy-tasks | 5430 | 5431 | 5445 | 4205 |
+| andy-ports | 5500 | 5501 | 5446 | 4208 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
@@ -59,6 +60,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-issues | 7410 | 7411 | 7443 | 6203 |
 | andy-agents | 7420 | 7421 | 7444 | 6204 |
 | andy-tasks | 7430 | 7431 | 7445 | 6205 |
+| andy-ports | 7500 | 7501 | 7446 | 6208 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
@@ -84,11 +86,12 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-tasks | `/tasks` | 9110 | `http://localhost:9100/tasks` |
 | andy-policies | `/policies` | 9111 | `http://localhost:9100/policies` |
 | andy-models | `/models` | 9112 | `http://localhost:9100/models` |
+| andy-ports | `/ports` | 9113 | `http://localhost:9100/ports` |
 
 **Gaps:**
 
 - `9104` was `andy-devpilot` before it was split into `andy-issues` + `andy-agents`. Reserved, don't reassign.
-- `9113+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
+- `9114+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
 
 **Config touch-points (for Conductor mode):**
 - `Conductor/Core/ServiceHost/Services/<Service>ServiceConfig.swift` — `defaultPort`, `proxyPath`, service name.
@@ -130,12 +133,12 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 | `andy-mcp-gateway` | README currently uses `https://localhost:5001`, which collides with `andy-auth`. Needs a canonical assignment — probably in the 5500 range. |
 | `andy-devpilot` | Deprecated; its responsibilities were split into `andy-issues` (story CRUD) and `andy-agents` (sandbox execution). |
 
-## Next free slots (as of 2026-04-20)
+## Next free slots (as of 2026-04-21)
 
-- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5500+`
-- Postgres (Mode 1): `5442`, `5446+`
-- Angular client (Mode 1): `4208+`
-- Conductor embedded: `9113+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5510+`
+- Postgres (Mode 1): `5442`, `5447+`
+- Angular client (Mode 1): `4209+`
+- Conductor embedded: `9114+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 
