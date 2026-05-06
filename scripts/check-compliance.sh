@@ -157,6 +157,64 @@ echo "=== Documentation ==="
 [[ -d "$TARGET/examples" ]]  && pass "examples/ directory" || warn "examples/ directory missing"
 
 echo ""
+echo "=== Cross-service URLs (must be env-driven, not hardcoded) ==="
+
+# Compose env blocks must reference ${VAR}, not literal URLs.
+compose_files=()
+for f in "$TARGET/docker-compose.yml" "$TARGET/docker-compose.embedded.yml"; do
+  [[ -f "$f" ]] && compose_files+=("$f")
+done
+if [[ ${#compose_files[@]} -gt 0 ]]; then
+  hardcoded=$(grep -nE 'AndyAuth__Authority|Rbac__ApiBaseUrl|AndySettings__ApiBaseUrl|Auth__Authority' "${compose_files[@]}" \
+    | grep -vE '\$\{[A-Z_]+(:-[^}]*)?\}' || true)
+  if [[ -n "$hardcoded" ]]; then
+    fail "compose has hardcoded sibling-service URLs (must use \${VAR:-default}):"
+    echo "$hardcoded" | sed 's/^/      /'
+  else
+    pass "docker-compose URLs are env-var driven"
+  fi
+fi
+
+# appsettings.json must not embed literal sibling-service URLs.
+appsettings_files=$(find "$TARGET/src" -maxdepth 3 -name "appsettings*.json" 2>/dev/null || true)
+if [[ -n "$appsettings_files" ]]; then
+  hardcoded=$(echo "$appsettings_files" | xargs grep -lE '"(Authority|ApiBaseUrl)":\s*"https?://[^"]+"' 2>/dev/null || true)
+  if [[ -n "$hardcoded" ]]; then
+    fail "appsettings has hardcoded URLs (must be empty strings, populated at runtime):"
+    echo "$hardcoded" | sed 's/^/      /'
+  else
+    pass "appsettings URL fields are empty (env-var driven)"
+  fi
+fi
+
+# Angular environment files must not be committed (they are generated).
+env_dir="$TARGET/client/src/environments"
+if [[ -d "$env_dir" ]]; then
+  committed=$(cd "$TARGET" && git ls-files "client/src/environments/environment.ts" \
+    "client/src/environments/environment.docker.ts" \
+    "client/src/environments/environment.embedded.ts" \
+    "client/src/environments/environment.prod.ts" 2>/dev/null || true)
+  if [[ -n "$committed" ]]; then
+    fail "Angular per-mode environment files must be generated, not committed:"
+    echo "$committed" | sed 's/^/      /'
+  else
+    pass "Angular per-mode environment files are not committed"
+  fi
+  if [[ -f "$env_dir/environment.template.ts" ]]; then
+    pass "environment.template.ts present (source for the generator)"
+  else
+    warn "environment.template.ts missing (generator source)"
+  fi
+fi
+
+# sync-dep-ports.sh must be present and executable.
+if [[ -x "$TARGET/scripts/sync-dep-ports.sh" ]]; then
+  pass "scripts/sync-dep-ports.sh present and executable"
+else
+  fail "scripts/sync-dep-ports.sh missing or not executable"
+fi
+
+echo ""
 echo "=== Ports ==="
 
 # Extract ports from docker-compose
