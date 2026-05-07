@@ -30,7 +30,7 @@ A fully scaffolded microservice with:
 | **Observability** | OpenTelemetry (traces, metrics, logs) |
 | **CLI** | Command-line tool with System.CommandLine |
 | **Docker** | Multi-stage Dockerfile, docker-compose with cert support |
-| **Secret Scanning** | Pre-commit hook + Gitleaks CI + `.gitleaks.toml` allowlist |
+| **Secret Scanning** | Pre-commit hook scans staged files for credentials |
 | **Code Assistant** | `CLAUDE.md` with architecture, conventions, commands |
 | **CI/CD** | GitHub Actions (secret scan, build, test, docs, Docker push) |
 | **Tests** | Unit (xUnit) + Integration (WebApplicationFactory) + Frontend (Karma) |
@@ -83,13 +83,7 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 
 ## Secret Scanning
 
-Every generated service includes three layers of protection against committing secrets:
-
-| Layer | Location | When |
-|-------|----------|------|
-| **Pre-commit hook** | `.githooks/pre-commit` | Before every local commit |
-| **Gitleaks CI** | `.github/workflows/ci.yml` | Every push and PR (blocks build) |
-| **Gitleaks config** | `.gitleaks.toml` | Allowlists dev-only defaults |
+Every generated service includes a local pre-commit hook (`.githooks/pre-commit`) that scans staged files for credentials before each commit.
 
 ### Setup (after scaffolding)
 
@@ -98,9 +92,7 @@ Every generated service includes three layers of protection against committing s
 ./scripts/setup-git-hooks.sh
 ```
 
-The hook scans staged files for: passwords, API keys, AWS credentials (`AKIA...`), GitHub PATs (`ghp_...`), OpenAI keys (`sk-...`), private keys, and database connection strings with embedded credentials.
-
-Dev-only defaults (`_dev_password`, `devcert`, `Test123!`) are allowlisted in `.gitleaks.toml` and won't trigger alerts.
+The hook scans staged files for: passwords, API keys, AWS credentials (`AKIA...`), GitHub PATs (`ghp_...`), OpenAI keys (`sk-...`), private keys, and database connection strings with embedded credentials. Dev-only defaults (`_dev_password`, `devcert`, `Test123!`) are exempt from the patterns.
 
 ## Code Assistant
 
@@ -115,7 +107,6 @@ testing requirements, and database strategy. This follows the pattern establishe
 template/
   .github/workflows/       CI/CD (secret scan, build, test, docs, Docker)
   .githooks/               Pre-commit secret scanning hook
-  .gitleaks.toml           Gitleaks allowlist config
   CLAUDE.md                Code assistant development guide
   certs/                   Corporate CA certificates
   client/                  Angular 18 SPA
