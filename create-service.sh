@@ -78,6 +78,10 @@ KNOWN_PORT_LIST=(
   "andy-ports-http:5501"
   "andy-ports-pg:5446"
   "andy-ports-client:4208"
+  "andy-mcp-proxy-https:5510"
+  "andy-mcp-proxy-http:5511"
+  "andy-mcp-proxy-pg:5447"
+  "andy-mcp-proxy-client:4209"
 )
 
 # --- Defaults ---

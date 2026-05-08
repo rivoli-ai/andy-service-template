@@ -35,6 +35,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-agents | 5420 | 5421 | 5444 | 4204 |
 | andy-tasks | 5430 | 5431 | 5445 | 4205 |
 | andy-ports | 5500 | 5501 | 5446 | 4208 |
+| andy-mcp-proxy | 5510 | 5511 | 5447 | 4209 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
@@ -61,6 +62,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-agents | 7420 | 7421 | 7444 | 6204 |
 | andy-tasks | 7430 | 7431 | 7445 | 6205 |
 | andy-ports | 7500 | 7501 | 7446 | 6208 |
+| andy-mcp-proxy | 7510 | 7511 | 7447 | 6209 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
@@ -87,11 +89,12 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-policies | `/policies` | 9111 | `http://localhost:9100/policies` |
 | andy-models | `/models` | 9112 | `http://localhost:9100/models` |
 | andy-ports | `/ports` | 9113 | `http://localhost:9100/ports` |
+| andy-mcp-proxy | `/mcp-proxy` | 9114 | `http://localhost:9100/mcp-proxy` |
 
 **Gaps:**
 
 - `9104` was `andy-devpilot` before it was split into `andy-issues` + `andy-agents`. Reserved, don't reassign.
-- `9114+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
+- `9115+` is the next free slot. Keep the standalone → embedded mapping monotonic so the Mode 1 and Mode 3 tables line up when reading.
 
 **Config touch-points (for Conductor mode):**
 - `Conductor/Core/ServiceHost/Services/<Service>ServiceConfig.swift` — `defaultPort`, `proxyPath`, service name.
@@ -130,15 +133,15 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 
 | Service | Notes |
 |---|---|
-| `andy-mcp-gateway` | README currently uses `https://localhost:5001`, which collides with `andy-auth`. Needs a canonical assignment — probably in the 5500 range. |
+| `andy-mcp-gateway` | Legacy. Successor is [`andy-mcp-proxy`](https://github.com/rivoli-ai/andy-mcp-proxy) (5510 / 7510 / `/mcp-proxy`). README currently uses `https://localhost:5001`, which collides with `andy-auth`; do not assign new ports — track removal under the deprecation issue. |
 | `andy-devpilot` | Deprecated; its responsibilities were split into `andy-issues` (story CRUD) and `andy-agents` (sandbox execution). |
 
-## Next free slots (as of 2026-04-21)
+## Next free slots (as of 2026-05-08)
 
-- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5510+`
-- Postgres (Mode 1): `5442`, `5447+`
-- Angular client (Mode 1): `4209+`
-- Conductor embedded: `9114+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5520+`
+- Postgres (Mode 1): `5442`, `5448+`
+- Angular client (Mode 1): `4210+`
+- Conductor embedded: `9115+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 
