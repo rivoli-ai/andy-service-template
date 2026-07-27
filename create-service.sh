@@ -82,6 +82,14 @@ KNOWN_PORT_LIST=(
   "andy-mcp-proxy-http:5511"
   "andy-mcp-proxy-pg:5447"
   "andy-mcp-proxy-client:4209"
+  "andy-eastbay-scout-https:5520"
+  "andy-eastbay-scout-http:5521"
+  "andy-eastbay-scout-pg:5448"
+  "andy-eastbay-scout-client:4210"
+  "andy-scout-hosting-https:5530"
+  "andy-scout-hosting-http:5531"
+  "andy-scout-hosting-pg:5449"
+  "andy-scout-hosting-client:4211"
 )
 
 # --- Defaults ---

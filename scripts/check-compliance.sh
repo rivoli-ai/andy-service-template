@@ -76,19 +76,19 @@ echo ""
 echo "=== Security ==="
 
 # Check for auth integration
-if grep -rq "AndyAuth" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "AndyAuth" "$TARGET/src" 2>/dev/null; then
   pass "Andy Auth integration"
 else
   fail "Andy Auth integration missing"
 fi
 
-if grep -rq "Rbac" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Rbac" "$TARGET/src" 2>/dev/null; then
   pass "Andy RBAC integration"
 else
   warn "Andy RBAC integration missing"
 fi
 
-if grep -rq "https" "$TARGET/docker-compose.yml" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "https" "$TARGET/docker-compose.yml" 2>/dev/null; then
   pass "HTTPS in docker-compose"
 else
   warn "HTTPS not configured in docker-compose"
@@ -97,19 +97,19 @@ fi
 echo ""
 echo "=== API Protocols ==="
 
-if grep -rq "Swagger\|Swashbuckle\|OpenApi" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Swagger\|Swashbuckle\|OpenApi" "$TARGET/src" 2>/dev/null; then
   pass "Swagger/OpenAPI"
 else
   fail "Swagger/OpenAPI missing"
 fi
 
-if grep -rq "McpServer\|ModelContextProtocol" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "McpServer\|ModelContextProtocol" "$TARGET/src" 2>/dev/null; then
   pass "MCP (Model Context Protocol)"
 else
   warn "MCP integration missing"
 fi
 
-if grep -rq "Grpc\|\.proto" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Grpc\|\.proto" "$TARGET/src" 2>/dev/null; then
   pass "gRPC"
 else
   warn "gRPC missing"
@@ -118,13 +118,13 @@ fi
 echo ""
 echo "=== Observability ==="
 
-if grep -rq "OpenTelemetry" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "OpenTelemetry" "$TARGET/src" 2>/dev/null; then
   pass "OpenTelemetry"
 else
   warn "OpenTelemetry missing"
 fi
 
-if grep -rq "health" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "health" "$TARGET/src" 2>/dev/null; then
   pass "Health check endpoint"
 else
   warn "Health check endpoint missing"
@@ -133,13 +133,13 @@ fi
 echo ""
 echo "=== Database ==="
 
-if grep -rq "UseNpgsql\|PostgreSql" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "UseNpgsql\|PostgreSql" "$TARGET/src" 2>/dev/null; then
   pass "PostgreSQL support"
 else
   fail "PostgreSQL support missing"
 fi
 
-if grep -rq "UseSqlite\|Sqlite" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "UseSqlite\|Sqlite" "$TARGET/src" 2>/dev/null; then
   pass "SQLite (embedded) support"
 else
   warn "SQLite (embedded) support missing"
