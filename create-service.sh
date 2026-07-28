@@ -90,6 +90,10 @@ KNOWN_PORT_LIST=(
   "andy-scout-hosting-http:5531"
   "andy-scout-hosting-pg:5449"
   "andy-scout-hosting-client:4211"
+  "andy-ahp-https:5540"
+  "andy-ahp-http:5541"
+  "andy-ahp-pg:5450"
+  "andy-ahp-client:4212"
 )
 
 # --- Defaults ---

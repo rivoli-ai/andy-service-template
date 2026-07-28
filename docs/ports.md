@@ -38,6 +38,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-mcp-proxy | 5510 | 5511 | 5447 | 4209 |
 | andy-eastbay-scout | 5520 | 5521 | 5448 | 4210 |
 | andy-scout-hosting | 5530 | 5531 | 5449 | 4211 |
+| andy-ahp | 5540 | 5541 | 5450 | 4212 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
@@ -67,6 +68,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-mcp-proxy | 7510 | 7511 | 7447 | 6209 |
 | andy-eastbay-scout | 7520 | 7521 | 7448 | 6210 |
 | andy-scout-hosting | 7530 | 7531 | 7449 | 6211 |
+| andy-ahp | 7540 | 7541 | 7450 | 6212 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
@@ -96,6 +98,7 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-mcp-proxy | `/mcp-proxy` | 9114 | `http://localhost:9100/mcp-proxy` |
 | andy-eastbay-scout | `/eastbay-scout` | 9115 | `http://localhost:9100/eastbay-scout` |
 | andy-scout-hosting | `/scout-hosting` | 9116 | `http://localhost:9100/scout-hosting` |
+| andy-ahp | `/ahp` | 9117 | `http://localhost:9100/ahp` |
 
 **Gaps:**
 
@@ -144,10 +147,10 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 
 ## Next free slots (as of 2026-05-08)
 
-- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5540+`
-- Postgres (Mode 1): `5442`, `5450+`
-- Angular client (Mode 1): `4212+`
-- Conductor embedded: `9117+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5550+`
+- Postgres (Mode 1): `5442`, `5451+`
+- Angular client (Mode 1): `4213+`
+- Conductor embedded: `9118+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 
