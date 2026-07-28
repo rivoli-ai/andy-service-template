@@ -36,6 +36,8 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-tasks | 5430 | 5431 | 5445 | 4205 |
 | andy-ports | 5500 | 5501 | 5446 | 4208 |
 | andy-mcp-proxy | 5510 | 5511 | 5447 | 4209 |
+| andy-eastbay-scout | 5520 | 5521 | 5448 | 4210 |
+| andy-scout-hosting | 5530 | 5531 | 5449 | 4211 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
@@ -63,6 +65,8 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-tasks | 7430 | 7431 | 7445 | 6205 |
 | andy-ports | 7500 | 7501 | 7446 | 6208 |
 | andy-mcp-proxy | 7510 | 7511 | 7447 | 6209 |
+| andy-eastbay-scout | 7520 | 7521 | 7448 | 6210 |
+| andy-scout-hosting | 7530 | 7531 | 7449 | 6211 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
@@ -90,6 +94,8 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-models | `/models` | 9112 | `http://localhost:9100/models` |
 | andy-ports | `/ports` | 9113 | `http://localhost:9100/ports` |
 | andy-mcp-proxy | `/mcp-proxy` | 9114 | `http://localhost:9100/mcp-proxy` |
+| andy-eastbay-scout | `/eastbay-scout` | 9115 | `http://localhost:9100/eastbay-scout` |
+| andy-scout-hosting | `/scout-hosting` | 9116 | `http://localhost:9100/scout-hosting` |
 
 **Gaps:**
 
@@ -138,10 +144,10 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 
 ## Next free slots (as of 2026-05-08)
 
-- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5520+`
-- Postgres (Mode 1): `5442`, `5448+`
-- Angular client (Mode 1): `4210+`
-- Conductor embedded: `9115+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5540+`
+- Postgres (Mode 1): `5442`, `5450+`
+- Angular client (Mode 1): `4212+`
+- Conductor embedded: `9117+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 

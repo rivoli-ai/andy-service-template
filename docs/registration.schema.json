@@ -76,7 +76,12 @@
               "code": { "type": "string" },
               "name": { "type": "string" },
               "description": { "type": "string" },
-              "isSystem": { "type": "boolean" }
+              "isSystem": { "type": "boolean" },
+              "permissions": {
+                "type": "array",
+                "description": "Fully-qualified permission codes this role grants, e.g. \"andy-tasks:goal:read\". Seeded by andy-rbac exactly like servicePrincipal.permissions, so a service's whole authorization model — which role may do what — is reviewable in this one file instead of being applied out of band by API or CLI.",
+                "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$" }
+              }
             }
           }
         },
