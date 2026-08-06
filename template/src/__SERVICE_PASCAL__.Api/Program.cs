@@ -132,9 +132,9 @@ builder.Services.AddSwaggerGen(options =>
     // OpenApiSecurityScheme.Reference / OpenApiReference pair with a dedicated
     // reference type, and AddSecurityRequirement now takes a factory over the
     // document rather than the requirement itself.
-    options.AddSecurityRequirement(_ => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
     {
-        { new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer"), new List<string>() }
+        { new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document), new List<string>() }
     });
 });
 
