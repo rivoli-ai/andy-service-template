@@ -26,7 +26,7 @@ COPY client/ ./
 RUN npx ng build --configuration docker
 
 # -- .NET build stage ─────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
@@ -65,7 +65,7 @@ COPY . .
 RUN dotnet publish src/__SERVICE_PASCAL__.Api/__SERVICE_PASCAL__.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # -- Runtime stage ─────────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl openssl && rm -rf /var/lib/apt/lists/*
