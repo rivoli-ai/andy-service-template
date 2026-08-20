@@ -94,6 +94,10 @@ KNOWN_PORT_LIST=(
   "andy-ahp-http:5541"
   "andy-ahp-pg:5450"
   "andy-ahp-client:4212"
+  "rivoli-licensing-https:5550"
+  "rivoli-licensing-http:5551"
+  "rivoli-licensing-pg:5451"
+  "rivoli-licensing-client:4213"
 )
 
 # --- Defaults ---
