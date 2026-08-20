@@ -39,12 +39,27 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-eastbay-scout | 5520 | 5521 | 5448 | 4210 |
 | andy-scout-hosting | 5530 | 5531 | 5449 | 4211 |
 | andy-ahp | 5540 | 5541 | 5450 | 4212 |
+| rivoli-licensing | 5550 | 5551 | 5451 | 4213 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
 - `src/*.Api/Program.cs` — any `--urls` fallback passed when no launchSettings profile is active.
 - `client/angular.json` — `serve.options.port` so `ng serve` doesn't auto-pick 4200.
 - `docs/README.md` — the ports table at the bottom.
+
+### Non-`andy-` services in this registry
+
+`rivoli-licensing` is a Rivoli product service rather than an Andy ecosystem service, but it is
+scaffolded from this template and runs on a developer machine beside the others, so it allocates from
+the same ranges. The registry is the machine-wide truth about which ports are taken; it is not a
+membership list.
+
+It takes no Mode 3 slot. `licensing.rivoli.ai` is a public internet service, not something Conductor
+bundles into a desktop launcher, so it has no proxy prefix and no `9101+` internal port.
+
+`create-service.sh` still validates service names against `^andy-<name>$`, so it will not scaffold a
+`rivoli-` service without a change to that rule. The port conflict check reads `KNOWN_PORT_LIST` and
+is unaffected — a future `andy-*` service will be refused these ports correctly.
 
 ## Mode 2 — Docker-compose (offset `+2000`)
 
@@ -69,6 +84,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-eastbay-scout | 7520 | 7521 | 7448 | 6210 |
 | andy-scout-hosting | 7530 | 7531 | 7449 | 6211 |
 | andy-ahp | 7540 | 7541 | 7450 | 6212 |
+| rivoli-licensing | 7550 | 7551 | 7451 | 6213 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
@@ -145,11 +161,11 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 | `andy-mcp-gateway` | Legacy. Successor is [`andy-mcp-proxy`](https://github.com/rivoli-ai/andy-mcp-proxy) (5510 / 7510 / `/mcp-proxy`). README currently uses `https://localhost:5001`, which collides with `andy-auth`; do not assign new ports — track removal under the deprecation issue. |
 | `andy-devpilot` | Deprecated; its responsibilities were split into `andy-issues` (story CRUD) and `andy-agents` (sandbox execution). |
 
-## Next free slots (as of 2026-05-08)
+## Next free slots (as of 2026-08-19)
 
-- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5550+`
-- Postgres (Mode 1): `5442`, `5451+`
-- Angular client (Mode 1): `4213+`
+- HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5560+`
+- Postgres (Mode 1): `5442`, `5452+`
+- Angular client (Mode 1): `4214+`
 - Conductor embedded: `9118+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
