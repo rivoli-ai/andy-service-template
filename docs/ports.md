@@ -36,7 +36,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-tasks | 5430 | 5431 | 5445 | 4205 |
 | andy-ports | 5500 | 5501 | 5446 | 4208 |
 | andy-mcp-proxy | 5510 | 5511 | 5447 | 4209 |
-| andy-eastbay-scout | 5520 | 5521 | 5448 | 4210 |
+| andy-scout | 5520 | 5521 | 5448 | 4210 |
 | andy-scout-hosting | 5530 | 5531 | 5449 | 4211 |
 | andy-ahp | 5540 | 5541 | 5450 | 4212 |
 | rivoli-licensing | 5550 | 5551 | 5451 | 4213 |
@@ -81,7 +81,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-tasks | 7430 | 7431 | 7445 | 6205 |
 | andy-ports | 7500 | 7501 | 7446 | 6208 |
 | andy-mcp-proxy | 7510 | 7511 | 7447 | 6209 |
-| andy-eastbay-scout | 7520 | 7521 | 7448 | 6210 |
+| andy-scout | 7520 | 7521 | 7448 | 6210 |
 | andy-scout-hosting | 7530 | 7531 | 7449 | 6211 |
 | andy-ahp | 7540 | 7541 | 7450 | 6212 |
 | rivoli-licensing | 7550 | 7551 | 7451 | 6213 |
@@ -112,7 +112,7 @@ Consumers — including the Conductor UI itself — always address services via 
 | andy-models | `/models` | 9112 | `http://localhost:9100/models` |
 | andy-ports | `/ports` | 9113 | `http://localhost:9100/ports` |
 | andy-mcp-proxy | `/mcp-proxy` | 9114 | `http://localhost:9100/mcp-proxy` |
-| andy-eastbay-scout | `/eastbay-scout` | 9115 | `http://localhost:9100/eastbay-scout` |
+| andy-scout | `/scout` | 9115 | `http://localhost:9100/scout` |
 | andy-scout-hosting | `/scout-hosting` | 9116 | `http://localhost:9100/scout-hosting` |
 | andy-ahp | `/ahp` | 9117 | `http://localhost:9100/ahp` |
 
