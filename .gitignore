@@ -79,3 +79,4 @@ certs/*.pfx
 # Coverage
 coverage/
 *.coverage
+.coord/state/
