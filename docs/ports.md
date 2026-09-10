@@ -10,8 +10,8 @@ Every Andy service supports three ways to run. Ports are distinct per mode so yo
 
 | Mode | Use case | Range |
 |---|---|---|
-| **Local dotnet** | `dotnet run` on the host. HTTPS preferred; HTTP is a debug/diagnostic variant. | `5xxx` (services + pg), `42xx` (Angular) |
-| **Docker** | Per-service `docker-compose.yml`. Offset `+2000` from the dotnet range so both can run at once. | `7xxx` (services + pg), `62xx` (Angular) |
+| **Local dotnet** | `dotnet run` on the host. HTTPS preferred; HTTP is a debug/diagnostic variant. | `5xxx` (services + pg), `42xx` (client) |
+| **Docker** | Per-service `docker-compose.yml`. Offset `+2000` from the dotnet range so both can run at once. | `7xxx` (services + pg), `62xx` (client) |
 | **Conductor embedded** | Bundled by the Swift shell in [`../conductor`](https://github.com/rivoli-ai/conductor). All traffic goes through a unified HTTP proxy on port `9100`. | Internal ports `9101+`, public via `http://localhost:9100/<prefix>` |
 
 The offset choice — docker ports = dotnet ports + 2000 — keeps the two modes mechanically related (easy to remember, trivial to check) while guaranteeing no overlap because the dotnet ranges are all below 5500.
@@ -20,7 +20,7 @@ The offset choice — docker ports = dotnet ports + 2000 — keeps the two modes
 
 Each service runs natively via `dotnet run`. HTTPS is the production-shape port and the one every other service and redirect URI references. HTTP is for in-container health probes and curl debugging.
 
-| Service | HTTPS | HTTP | Postgres | Angular client |
+| Service | HTTPS | HTTP | Postgres | Client |
 |---|---|---|---|---|
 | andy-auth | 5001 | 5002 | 5435 | — |
 | andy-rbac | 5003 | 5004 | 5433 | — |
@@ -45,7 +45,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
 - `src/*.Api/Program.cs` — any `--urls` fallback passed when no launchSettings profile is active.
-- `client/angular.json` — `serve.options.port` so `ng serve` doesn't auto-pick 4200.
+- `client/vite.config.ts` — `server.port` so the dev server doesn't auto-pick 5173.
 - `docs/README.md` — the ports table at the bottom.
 
 ### Non-`andy-` services in this registry
@@ -66,7 +66,7 @@ is unaffected — a future `andy-*` service will be refused these ports correctl
 
 Each service ships a `docker-compose.yml` that binds the host-facing ports below. The guarantee: **a docker stack on these ports can coexist with a dotnet native run on the Mode 1 ports**, so you can compare behaviour or run half-and-half for debugging.
 
-| Service | HTTPS | HTTP | Postgres | Angular client |
+| Service | HTTPS | HTTP | Postgres | Client |
 |---|---|---|---|---|
 | andy-auth | 7001 | 7002 | 7435 | — |
 | andy-rbac | 7003 | 7004 | 7433 | — |
@@ -133,7 +133,7 @@ Anywhere in the ecosystem that refers to a service by URL must be aware of which
 
 ### andy-auth OAuth client redirect URIs (`DbSeeder.cs`)
 
-Every `<service>-web` OAuth client must register the Angular client's `/callback` URL for every mode the service supports. For a typical SPA service (e.g. andy-tasks) that means:
+Every `<service>-web` OAuth client must register the client's `/auth/callback` URL for every mode the service supports. For a typical SPA service (e.g. andy-tasks) that means:
 ```
 RedirectUris: [
   // Mode 1 — dotnet native, HTTPS preferred
@@ -147,7 +147,7 @@ RedirectUris: [
 
 ### andy-auth CORS allow-list (`appsettings.*.json → CorsOrigins:AllowedOrigins`)
 
-Must include every Angular client origin across every mode the service supports, both `http://` and `https://`. For a service with a client, six entries per service in the standalone + docker case, plus the Conductor proxy origin once shared.
+Must include every client origin across every mode the service supports, both `http://` and `https://`. For a service with a client, six entries per service in the standalone + docker case, plus the Conductor proxy origin once shared.
 
 ### Service-to-service URLs in a service's own `appsettings.json`
 
@@ -167,15 +167,15 @@ Service-to-service URLs (e.g. `AndyAuth:Authority`, `Rbac:ApiBaseUrl`) are set p
 
 - HTTPS / HTTP pair (Mode 1): `5130/5131`, `5210/5211`, `5400/5401`, `5560+`
 - Postgres (Mode 1): `5442`, `5452+`
-- Angular client (Mode 1): `4214+`
+- Client dev server (Mode 1): `4214+`
 - Conductor embedded: `9118+`
 
 Applying `+2000` to any newly assigned Mode 1 port gives the Mode 2 equivalent; no separate allocation needed.
 
 ## Workflow for adding a new service
 
-1. Run `./create-service.sh --name andy-foo --description "…" --port-https NEW_PORT`. The script picks the next free HTTPS port (Mode 1) and derives HTTP (+1), Postgres (next in 5432–5499 range), and Angular client (next in 4200–4299 range) if you don't pass them.
-2. The script writes Mode 1 values to `KNOWN_PORT_LIST` and the scaffolded service's `launchSettings.json`, `angular.json`, `Program.cs`, and `docker-compose.yml` — the last one using the Mode 2 values (Mode 1 + 2000).
+1. Run `./create-service.sh --name andy-foo --description "…" --port-https NEW_PORT`. The script picks the next free HTTPS port (Mode 1) and derives HTTP (+1), Postgres (next in 5432–5499 range), and client (next in 4200–4299 range) if you don't pass them.
+2. The script writes Mode 1 values to `KNOWN_PORT_LIST` and the scaffolded service's `launchSettings.json`, `vite.config.ts`, `Program.cs`, and `docker-compose.yml` — the last one using the Mode 2 values (Mode 1 + 2000).
 3. Add a row to the **Mode 1** and **Mode 2** tables above.
 4. If the service will also be embedded in Conductor, pick the next `9111+` slot, add a `<Service>ServiceConfig.swift` manifest in `../conductor/Conductor/Core/ServiceHost/Services/`, and add a row to the **Mode 3** table.
 5. Update `andy-auth/src/Andy.Auth.Server/appsettings.Development.json → CorsOrigins:AllowedOrigins` with the new client's origins (http + https, Mode 1 + Mode 2), and add/update the OAuth client in `DbSeeder.cs` with the corresponding redirect URIs. Rebuild the andy-auth container.
