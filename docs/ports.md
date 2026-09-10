@@ -40,6 +40,7 @@ Each service runs natively via `dotnet run`. HTTPS is the production-shape port 
 | andy-scout-hosting | 5530 | 5531 | 5449 | 4211 |
 | andy-ahp | 5540 | 5541 | 5450 | 4212 |
 | rivoli-licensing | 5550 | 5551 | 5451 | 4213 |
+| rivoli-board | 5560 | 5561 | 5452 | 4214 |
 
 **Config touch-points per service (for dotnet mode):**
 - `src/*.Api/Properties/launchSettings.json` — both `applicationUrl` profiles (`https` / `http`). Do not keep the VS-generated `7xxx` HTTPS defaults.
@@ -85,6 +86,7 @@ Each service ships a `docker-compose.yml` that binds the host-facing ports below
 | andy-scout-hosting | 7530 | 7531 | 7449 | 6211 |
 | andy-ahp | 7540 | 7541 | 7450 | 6212 |
 | rivoli-licensing | 7550 | 7551 | 7451 | 6213 |
+| rivoli-board | 7560 | 7561 | 7452 | 6214 |
 
 **Config touch-points (for docker mode):**
 - `docker-compose.yml` — `ports:` entries on the service container, the postgres container, and the client container.
