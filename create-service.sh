@@ -136,7 +136,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --port-https PORT    API HTTPS port (default: 5400)"
       echo "  --port-http PORT     API HTTP port (default: 5401)"
       echo "  --port-pg PORT       PostgreSQL port (default: 5442)"
-      echo "  --port-client PORT   Angular client port (default: 4202)"
+      echo "  --port-client PORT   Client dev-server port (default: 4202)"
       echo "  --no-git             Don't initialize git repository"
       echo "  --help               Show this help"
       exit 0
@@ -172,7 +172,7 @@ if [[ "$PORTS_FROM_CLI" != "true" ]]; then
   read -rp "  API HTTPS port [$PORT_HTTPS]: " input; PORT_HTTPS="${input:-$PORT_HTTPS}"
   read -rp "  API HTTP port [$PORT_HTTP]: " input; PORT_HTTP="${input:-$PORT_HTTP}"
   read -rp "  PostgreSQL port [$PORT_PG]: " input; PORT_PG="${input:-$PORT_PG}"
-  read -rp "  Angular client port [$PORT_CLIENT]: " input; PORT_CLIENT="${input:-$PORT_CLIENT}"
+  read -rp "  Client dev-server port [$PORT_CLIENT]: " input; PORT_CLIENT="${input:-$PORT_CLIENT}"
 fi
 
 # --- Check port conflicts ---
@@ -224,7 +224,7 @@ SERVICE_SCREAMING=$(echo "$SERVICE_SNAKE" | tr '[:lower:]' '[:upper:]')         
 
 # --- Derive Mode 2 (docker) ports from Mode 1 (dotnet) ports ---
 # Convention: docker host binding = dotnet port + 2000 for services / postgres,
-# +2000 for Angular client (4xxx → 6xxx). See docs/ports.md.
+# +2000 for the client dev server (4xxx → 6xxx). See docs/ports.md.
 PORT_HTTPS_DOCKER=$((PORT_HTTPS + 2000))
 PORT_HTTP_DOCKER=$((PORT_HTTP + 2000))
 PORT_PG_DOCKER=$((PORT_PG + 2000))

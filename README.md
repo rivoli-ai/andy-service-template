@@ -1,6 +1,6 @@
 # Andy Service Template
 
-Everything to get started and create a new service in the Andy ecosystem: API (REST/Swagger, MCP, gRPC), Angular front-end, PostgreSQL/SQLite, OpenTelemetry, integration with Andy Auth, Andy RBAC, and Andy Settings.
+Everything to get started and create a new service in the Andy ecosystem: API (REST/Swagger, MCP, gRPC), React front-end on Meta's Astryx design system, PostgreSQL/SQLite, OpenTelemetry, integration with Andy Auth, Andy RBAC, and Andy Settings.
 
 See [`docs/ports.md`](docs/ports.md) for the canonical port registry (standalone + Conductor-embedded).
 
@@ -21,7 +21,7 @@ A fully scaffolded microservice with:
 | Feature | Implementation |
 |---------|---------------|
 | **Backend** | .NET 8 (Clean Architecture: Domain, Application, Infrastructure, Api, Shared) |
-| **Frontend** | Angular 18 SPA with OIDC auth, route guards, interceptors |
+| **Frontend** | React 19 + Vite SPA on [Astryx](https://astryx.atmeta.com/), with OIDC auth, route guard and a token-attaching API client |
 | **API** | REST/Swagger + MCP (Model Context Protocol) + gRPC |
 | **Database** | PostgreSQL (default) or SQLite (embedded for Conductor) |
 | **Authentication** | OAuth2/OIDC via Andy Auth (JWT Bearer) |
@@ -56,7 +56,7 @@ All Andy ecosystem services use HTTPS by default. This is the port allocation:
 
 ### Compliance Status
 
-| Service | Clean Arch | Angular | Swagger | MCP | gRPC | Auth | RBAC | Settings | OTel | Docker | CI/CD | Secrets | CLAUDE.md |
+| Service | Clean Arch | Client | Swagger | MCP | gRPC | Auth | RBAC | Settings | OTel | Docker | CI/CD | Secrets | CLAUDE.md |
 |---------|-----------|---------|---------|-----|------|------|------|----------|------|--------|-------|---------|-----------|
 | andy-auth | Y | N | Y | N | N | - | N | N | N | Y | N | N | N |
 | andy-rbac | Y | Y | Y | N | N | Y | - | N | N | Y | N | N | N |
@@ -109,7 +109,7 @@ template/
   .githooks/               Pre-commit secret scanning hook
   CLAUDE.md                Code assistant development guide
   certs/                   Corporate CA certificates
-  client/                  Angular 18 SPA
+  client/                  React 19 + Vite SPA (Astryx)
     src/app/
       core/auth/           OIDC authentication
       core/interceptors/   HTTP auth interceptor

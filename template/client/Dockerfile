@@ -1,17 +1,15 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-# Use `npm install` rather than `npm ci` because the template's
-# package-lock.json can drift from package.json across Angular minor
-# upgrades. npm install tolerates the drift and regenerates the lock
-# in-image; services that commit their own lockfile get deterministic
-# builds via `npm ci` in CI.
+# `npm install` rather than `npm ci`: the template ships no lockfile, so a
+# scaffolded service resolves fresh. Services that commit their own
+# package-lock.json should switch this to `npm ci` for deterministic builds.
 COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund
 COPY . .
-RUN npx ng build --configuration docker
+RUN npm run build
 
 FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/client/browser /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

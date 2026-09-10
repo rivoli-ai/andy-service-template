@@ -66,29 +66,31 @@ if [[ -d "$TARGET/src" ]]; then
 fi
 
 echo ""
-echo "=== Frontend (Angular) ==="
+echo "=== Frontend (React + Astryx) ==="
 
 [[ -d "$TARGET/client" ]]                     && pass "client/ directory" || fail "client/ directory missing"
-[[ -f "$TARGET/client/angular.json" ]]        && pass "angular.json" || fail "angular.json missing (if client/ exists)"
+[[ -f "$TARGET/client/vite.config.ts" ]]      && pass "vite.config.ts" || fail "vite.config.ts missing (if client/ exists)"
+grep -q "@astryxdesign/core" "$TARGET/client/package.json" 2>/dev/null \
+  && pass "Astryx design system" || fail "Astryx design system missing (if client/ exists)"
 [[ -f "$TARGET/client/package.json" ]]        && pass "package.json" || fail "package.json missing (if client/ exists)"
 
 echo ""
 echo "=== Security ==="
 
 # Check for auth integration
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "AndyAuth" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "AndyAuth" "$TARGET/src" 2>/dev/null; then
   pass "Andy Auth integration"
 else
   fail "Andy Auth integration missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Rbac" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "Rbac" "$TARGET/src" 2>/dev/null; then
   pass "Andy RBAC integration"
 else
   warn "Andy RBAC integration missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "https" "$TARGET/docker-compose.yml" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "https" "$TARGET/docker-compose.yml" 2>/dev/null; then
   pass "HTTPS in docker-compose"
 else
   warn "HTTPS not configured in docker-compose"
@@ -97,19 +99,19 @@ fi
 echo ""
 echo "=== API Protocols ==="
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Swagger\|Swashbuckle\|OpenApi" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "Swagger\|Swashbuckle\|OpenApi" "$TARGET/src" 2>/dev/null; then
   pass "Swagger/OpenAPI"
 else
   fail "Swagger/OpenAPI missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "McpServer\|ModelContextProtocol" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "McpServer\|ModelContextProtocol" "$TARGET/src" 2>/dev/null; then
   pass "MCP (Model Context Protocol)"
 else
   warn "MCP integration missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "Grpc\|\.proto" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "Grpc\|\.proto" "$TARGET/src" 2>/dev/null; then
   pass "gRPC"
 else
   warn "gRPC missing"
@@ -118,13 +120,13 @@ fi
 echo ""
 echo "=== Observability ==="
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "OpenTelemetry" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "OpenTelemetry" "$TARGET/src" 2>/dev/null; then
   pass "OpenTelemetry"
 else
   warn "OpenTelemetry missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "health" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "health" "$TARGET/src" 2>/dev/null; then
   pass "Health check endpoint"
 else
   warn "Health check endpoint missing"
@@ -133,13 +135,13 @@ fi
 echo ""
 echo "=== Database ==="
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "UseNpgsql\|PostgreSql" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "UseNpgsql\|PostgreSql" "$TARGET/src" 2>/dev/null; then
   pass "PostgreSQL support"
 else
   fail "PostgreSQL support missing"
 fi
 
-if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist --exclude-dir=.angular "UseSqlite\|Sqlite" "$TARGET/src" 2>/dev/null; then
+if grep -rq --exclude-dir=node_modules --exclude-dir=obj --exclude-dir=bin --exclude-dir=dist "UseSqlite\|Sqlite" "$TARGET/src" 2>/dev/null; then
   pass "SQLite (embedded) support"
 else
   warn "SQLite (embedded) support missing"
@@ -187,23 +189,20 @@ if [[ -n "$appsettings_files" ]]; then
   fi
 fi
 
-# Angular environment files must not be committed (they are generated).
-env_dir="$TARGET/client/src/environments"
-if [[ -d "$env_dir" ]]; then
-  committed=$(cd "$TARGET" && git ls-files "client/src/environments/environment.ts" \
-    "client/src/environments/environment.docker.ts" \
-    "client/src/environments/environment.embedded.ts" \
-    "client/src/environments/environment.prod.ts" 2>/dev/null || true)
-  if [[ -n "$committed" ]]; then
-    fail "Angular per-mode environment files must be generated, not committed:"
-    echo "$committed" | sed 's/^/      /'
+# The client reads configuration from Vite env vars (import.meta.env.VITE_*),
+# not from generated per-mode files, so there is nothing to accidentally commit.
+# What matters instead is that no environment is hardcoded into the source.
+client_env="$TARGET/client/src/config/environment.ts"
+if [[ -f "$client_env" ]]; then
+  if grep -q "import.meta.env" "$client_env"; then
+    pass "client configuration is env-var driven"
   else
-    pass "Angular per-mode environment files are not committed"
+    fail "client configuration does not read import.meta.env"
   fi
-  if [[ -f "$env_dir/environment.template.ts" ]]; then
-    pass "environment.template.ts present (source for the generator)"
+  if grep -qE "https?://[a-zA-Z0-9.-]+" "$client_env"; then
+    fail "client configuration hardcodes a URL; it should come from an env var"
   else
-    warn "environment.template.ts missing (generator source)"
+    pass "client configuration hardcodes no URLs"
   fi
 fi
 
