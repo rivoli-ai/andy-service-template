@@ -98,6 +98,10 @@ KNOWN_PORT_LIST=(
   "rivoli-licensing-http:5551"
   "rivoli-licensing-pg:5451"
   "rivoli-licensing-client:4213"
+  "rivoli-board-https:5560"
+  "rivoli-board-http:5561"
+  "rivoli-board-pg:5452"
+  "rivoli-board-client:4214"
 )
 
 # --- Defaults ---
